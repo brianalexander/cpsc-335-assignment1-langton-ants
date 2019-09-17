@@ -4,66 +4,127 @@ function mod(n, m) {
 
 class Grid {
   COLORS = {
-    0: "#000",
-    1: "#F00",
-    2: "#FF0",
-    3: "#00F"
+    0: "#000", // BLACK
+    1: "#F00", // RED
+    2: "#FF0", // YELLOW
+    3: "#00F" // BLUE
   };
 
   constructor(id, x = 41, y = 41, width = 30, height = 30) {
-    super(this);
     this.grid = this.makeGrid(id, x, y, width, height);
+    this.ants = [];
+  }
+
+  add(ant) {
+    this.ant = ant;
+    this.drawAnt(ant.x, ant.y, ant.direction);
+  }
+
+  drawAnt(x, y, direction) {
+    console.log(x, y);
+    const tile = this.tiles[x][y];
+    const xpos = tile.xpos;
+    const ypos = tile.ypos;
+
+    const triangle = [
+      { x: ypos + 5, y: xpos + 5 },
+      { x: ypos + 25, y: xpos + 5 },
+      { x: ypos + 15, y: xpos + 25 }
+    ];
+
+    this.grid
+      .selectAll(`polygon`)
+      .data([triangle])
+      .enter()
+      .append("polygon")
+      .attr("id", "ant")
+      .attr("points", function(triangle) {
+        return triangle
+          .map(function(point) {
+            return [point.x, point.y].join(",");
+          })
+          .join(" ");
+      })
+      .style("fill", "#fff")
+      .style("stroke", "#000");
+  }
+
+  removeAnt() {
+    this.grid.select("#ant").remove();
+  }
+
+  iterate() {
+    const ant = this.ant;
+
+    // Turn the ant based on the current tiles state
+    ant.turn(this.getStateOfTile(ant.x, ant.y));
+    console.log("new direction", ant.direction);
+
+    // Update tile color
+    this.incrementColorAtTile(ant.x, ant.y);
+
+    // Move the ant
+    ant.moveForward();
+
+    // Re-render ant
+    this.removeAnt();
+    this.drawAnt(ant.x, ant.y, ant.direction);
   }
 
   makeGrid(id, x, y, width, height) {
-    let gridData = new Array();
+    let tiles = new Array();
     let xid = 0;
     let yid = 0;
-    const width = width;
-    const height = height;
-
-    tiles = new Array(41);
-    for (let i = 0; i < 41; i++) {
-      tiles[i] = new Array(41).fill(0);
-    }
+    let xpos = 1;
+    let ypos = 1;
 
     // iterate for rows
     for (let row = 0; row < y; row++) {
-      gridData.push(new Array());
+      tiles.push(new Array());
 
       for (let column = 0; column < x; column++) {
-        gridData[row].push({
-          xid: xid,
-          yid: yid,
+        tiles[row].push({
+          x: xid,
+          y: yid,
+          xpos: xpos,
+          ypos: ypos,
           width: width,
-          height: height
+          height: height,
+          color: 0
         });
 
         // increment the x position. I.e. move it over by 50
+        xpos += width;
         xid += 1;
       }
 
       // reset the x position after a row is complete
+      xpos = 1;
       xid = 0;
       // increment the y position for the next row.  Move it down 50
+      ypos += height;
       yid += 1;
     }
+
+    this.tiles = tiles;
+
+    let svg_width = x * width + 1;
+    let svg_height = y * height + 1;
 
     let grid = d3
       .select("#" + id)
       .append("svg")
-      .attr("width", "1232px")
-      .attr("height", "1232px");
-    console.log("grid", grid);
+      .attr("width", `${svg_width}px`)
+      .attr("height", `${svg_height}px`);
 
     let rows = grid
       .selectAll()
-      .data(gridData)
+      .data(tiles)
       .enter()
       .append("g")
       .attr("class", "row");
 
-    let squares = rows
+    rows
       .selectAll()
       .data(function(row) {
         return row;
@@ -74,13 +135,13 @@ class Grid {
         return "square";
       })
       .attr("id", function(square) {
-        return ["x" + square.xid, "y" + square.yid].join("");
+        return ["x" + square.x, "y" + square.y].join("");
       })
       .attr("x", function(square) {
-        return square.x;
+        return square.xpos;
       })
       .attr("y", function(square) {
-        return square.y;
+        return square.ypos;
       })
       .attr("width", function(square) {
         return square.width;
@@ -91,12 +152,23 @@ class Grid {
       .style("fill", "#000")
       .style("stroke", "#fff");
 
-    }
+    return grid;
+  }
 
-  incrementColor(x, y) {
-    tiles[x][y] = mod(tiles[x][y] + 1, 4);
-    color = COLORS[tiles[x][y]];
-    grid.select(`#x${x}y${y}`).style("fill", `${color}`);
+  incrementColorAtTile(x, y) {
+    // increment virtual tile
+    this.tiles[x][y].color = mod(this.tiles[x][y].color + 1, 4);
+
+    // get the new color for virtual tile
+    const color = this.COLORS[this.tiles[x][y].color];
+
+    // update color on grid
+    // console.log(`#x${x}y${y}`);
+    this.grid.select(`#x${x}y${y}`).style("fill", `${color}`);
+  }
+
+  getStateOfTile(x, y) {
+    return this.tiles[x][y].color;
   }
 }
 
@@ -109,29 +181,30 @@ class Ant {
   };
 
   constructor(x = 21, y = 21, direction = 0) {
-    super(this);
     this.x = x;
     this.y = y;
     this.direction = direction;
-    // this.drawAnt();
   }
 
-  //   drawAnt(x, y) {}
-
-  turn() {
-    state = tiles[this.x][this.y];
-    console.log(state);
+  /**
+   * Set the ants direction based on the input color,
+   * turning right for _ and _ and left for _ and _.
+   */
+  turn(state) {
     if (0 == state || 1 == state) {
-      this.direction = mod(this.direction + 1, 4);
-      // console.log("turn right");
+      // if black or red
+      this.direction = mod(this.direction + 1, 4); // turn right
     } else {
-      this.direction = mod(this.direction - 1, 4);
-      // console.log("turn left");
+      // if blue or yellow
+      this.direction = mod(this.direction - 1, 4); // turn left
     }
   }
 
+  /**
+   * Move the ant forward inside a 2D array
+   * with 0,0 being the top left corner.
+   */
   moveForward() {
-    console.log(this.direction, dirToText[this.direction]);
     if (0 == this.direction) {
       this.x--;
     } else if (1 == this.direction) {
@@ -141,5 +214,9 @@ class Ant {
     } else {
       this.y++;
     }
+  }
+
+  getAntState() {
+    return { x: this.x, y: this.y, direction: this.direction };
   }
 }
