@@ -220,3 +220,5 @@ class Ant {
     return { x: this.x, y: this.y, direction: this.direction };
   }
 }
+
+
