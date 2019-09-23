@@ -1,3 +1,24 @@
+const rectWidth = 30;
+const rectHeight = 30;
+const numRows = 41;
+const numCols = 41;
+// 10x10, 100: 0.23, 3.6ms
+// 100x100, 10,000: 0.24, 171ms
+// 200x200, 40,000: 831ms
+// 300x300, 90,000: 2150ms
+// 400x400, 160,000 5447ms
+// 500x500, 250,000: 0.23, 11063ms, 10732ms
+// 600x600, 360,000: 21441ms
+// 700x700, 490,000: 41317ms
+// 800x800, 640,000: 66912ms
+// 900x900, 810,000: 104049ms
+
+const svgWidth = rectWidth * numCols;
+const svgHeight = rectHeight * numRows;
+
+let antPos = [Math.floor(numRows / 2), Math.floor(numCols / 2)];
+let antDir = 0;
+
 function mod(n, m) {
   return ((n % m) + m) % m;
 }
@@ -27,9 +48,27 @@ const DIR_TO_TEXT = {
   3: "South"
 };
 
+const DIR_TO_POLYGON = {
+  0: function(xpos, ypos) {
+    return `${xpos + 25},${ypos + 25} ${xpos + 25},${ypos + 5} ${xpos +
+      5},${ypos + 15}`;
+  },
+  1: function(xpos, ypos) {
+    return `${xpos + 25},${ypos + 25} ${xpos + 5},${ypos + 25} ${xpos +
+      15},${ypos + 5}`;
+  },
+  2: function(xpos, ypos) {
+    return `${xpos + 5},${ypos + 5} ${xpos + 5},${ypos + 25} ${xpos +
+      25},${ypos + 15}`;
+  },
+  3: function(xpos, ypos) {
+    return `${xpos + 5},${ypos + 5} ${xpos + 25},${ypos + 5} ${xpos +
+      15},${ypos + 25}`;
+  }
+};
+
 function turn(tile, antDirection) {
-  console.log(tile.style["fill"]);
-  state = HEX_TO_CODE[tile.style["fill"]];
+  state = tile.getAttribute("data-color");
 
   if (0 == state || 1 == state) {
     // if black or red
@@ -38,9 +77,8 @@ function turn(tile, antDirection) {
     // if blue or yellow
     antDirection = mod(antDirection - 1, 4); // turn left
   }
-  console.log([state, antDirection]);
 
-  return [state, antDirection];
+  return antDirection;
 }
 
 /**
@@ -61,34 +99,23 @@ function move(antPosition) {
   return antPosition;
 }
 
-function drawAnt(tile, ant) {
+function drawAnt(tile, ant, antDirection) {
   let xpos = Number(tile.getAttribute("x"));
   let ypos = Number(tile.getAttribute("y"));
 
-  ant.setAttribute(
-    "points",
-    `${ypos + 5},${xpos + 5} ${ypos + 25},${xpos + 5} ${ypos + 15},${xpos + 25}`
-  );
+  ant.setAttribute("points", DIR_TO_POLYGON[antDirection](xpos, ypos));
 }
 
-function incrementColorAtTile(colorCode) {
+function incrementColorAtTile(tile) {
+  let colorCode = Number(tile.getAttribute("data-color"));
   const newCode = mod(colorCode + 1, 4);
-  currentSquare.setAttribute("fill", CODE_TO_HEX[newCode]);
+  tile.setAttribute("data-color", newCode);
+
+  tile.style["fill"] = CODE_TO_HEX[newCode];
 }
-
-const rectWidth = 30;
-const rectHeight = 30;
-const numRows = 41;
-const numCols = 41;
-
-const svgWidth = rectWidth * numCols;
-const svgHeight = rectHeight * numRows;
-
-let antPos = [20, 20];
-let antDir = 0;
-
+console.time("Setup");
 // Select div with ID grid
-let gridDiv = document.querySelector("#grid");
+let gridDiv = document.getElementById("grid");
 
 // Add an SVG element
 let svgTag = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -97,12 +124,17 @@ svgTag.setAttribute("height", `${svgHeight}px`);
 
 gridDiv.append(svgTag);
 
-// Add 10 <g> elements
+const rectHandles = new Array(numRows);
+for (let i = 0; i < numCols; i++) {
+  rectHandles[i] = new Array(numCols);
+}
+
+// Add <g> elements
 for (let i = 0; i < numRows; i++) {
   let gTag = document.createElementNS("http://www.w3.org/2000/svg", "g");
   gTag.setAttribute("class", "row");
 
-  // Inside each <g> add 10 <rect> elements
+  // Inside each <g> add <rect> elements
   for (let j = 0; j < numCols; j++) {
     let rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
     rect.setAttribute("class", "square");
@@ -111,36 +143,50 @@ for (let i = 0; i < numRows; i++) {
     rect.setAttribute("y", `${rectHeight * i}`);
     rect.setAttribute("width", String(rectWidth));
     rect.setAttribute("height", String(rectHeight));
+    rect.setAttribute("data-color", 0);
     rect.style["fill"] = "#000";
     rect.style["stroke"] = "#FFF";
 
+    rectHandles[j][i] = rect;
     gTag.append(rect);
   }
   svgTag.append(gTag);
 }
 
 // Create <polygon element> for the ant
-let ant = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+let antHandle = document.createElementNS(
+  "http://www.w3.org/2000/svg",
+  "polygon"
+);
 
-ant.style["fill"] = "lime";
-ant.style["stroke"] = "black";
+antHandle.style["fill"] = "lime";
+antHandle.style["stroke"] = "black";
 
-svgTag.append(ant);
+svgTag.append(antHandle);
+console.timeEnd("Setup");
 
 // main loop
 let i = 0;
 let currentSquare;
-let currentColorCode;
+let timeArray = new Array();
+let t0, t1;
 setInterval(() => {
-  currentSquare = document.querySelector(`#x${antPos[0]}y${antPos[1]}`);
+  t0 = performance.now();
+  currentSquare = rectHandles[antPos[0]][antPos[1]];
+  drawAnt(currentSquare, antHandle, antDir);
 
-  drawAnt(currentSquare, ant);
-
-  [currentColorCode, antDir] = turn(currentSquare, antDir);
-
-  incrementColorAtTile(currentSquare, currentColorCode);
-
+  antDir = turn(currentSquare, antDir);
   antPos = move(antPos);
+  incrementColorAtTile(currentSquare);
 
   i++;
-}, 1000);
+
+  t1 = performance.now();
+  timeArray.push(t1 - t0);
+  console.log(
+    timeArray.reduce(function(total, num) {
+      return total + num;
+    }) / i,
+    t1 - t0
+  );
+}, 100);
