@@ -18,7 +18,7 @@
 
 /**
  * @function
- * @name
+ * @name mod
  *
  * @description Calculates the modulus of a number.
  *
@@ -53,6 +53,7 @@ class AntFarm {
   }
 
   /**
+   * @member
    * @private
    * @readonly
    */
@@ -65,10 +66,10 @@ class AntFarm {
 
   /**
    * @method
-   * @name
+   * @name pause
    *
-   * @description Creates the necessary DOM elements
-   *                and begins iterating and updating the grid.
+   * @description clears the interval for the main loop,
+   *              visually pausing the execution on the page.
    */
   pause() {
     this.running = false;
@@ -77,10 +78,11 @@ class AntFarm {
 
   /**
    * @method
-   * @name
+   * @name resume
    *
-   * @description Creates the necessary DOM elements
-   *                and begins iterating and updating the grid.
+   * @description Sets an interval execution of the loopFunction
+   *              member defined on the instance. Visually starts
+   *              simulation execution.
    */
   resume() {
     if (!this.outOfBounds) {
@@ -91,10 +93,11 @@ class AntFarm {
 
   /**
    * @method
-   * @name
+   * @name increaseStepCount
    *
-   * @description Creates the necessary DOM elements
-   *                and begins iterating and updating the grid.
+   * @description Increments the member steps variable and if an
+   *              ID was provided to the constructor, will update
+   *              the text of the HTML element with the new count.
    */
   increaseStepCount() {
     this.steps++;
@@ -105,10 +108,10 @@ class AntFarm {
 
   /**
    * @method
-   * @name
+   * @name destroy
    *
-   * @description Creates the necessary DOM elements
-   *                and begins iterating and updating the grid.
+   * @description stops execution of the main loop and removes all
+   *              HTML elements that were added to the DOM.
    */
   destroy() {
     clearInterval(this.mainLoop);
@@ -117,9 +120,8 @@ class AntFarm {
 
   /**
    * @method
-   * @name
-   *
    * @name start
+   *
    * @description Creates the necessary DOM elements
    *                and begins iterating and updating the grid.
    */
@@ -269,8 +271,10 @@ class AntFarm {
   /**
    * @method
    * @private
-   * @name
-   * @description
+   * @name getDirectionFunction
+   * @description returns the points attribute string for an
+   *              HTML polygon element to create a triangle
+   *              with the desired direction.
    *
    * @param {Number} direction
    *
@@ -292,11 +296,12 @@ class AntFarm {
   /**
    * @method
    * @private
-   * @name
-   * @description
+   * @name drawPolygonWest
+   * @description Generates polygon element points attribute for
+   *          a west-pointing triangle.
    *
-   * @param {Number} xpos
-   * @param {Number} ypos
+   * @param {Number} xpos x-coordinate in pixels to begin drawing.
+   * @param {Number} ypos y-coordinate in pixels to begin drawing.
    *
    * @returns {String}
    */
@@ -309,11 +314,12 @@ class AntFarm {
   /**
    * @method
    * @private
-   * @name
-   * @description
+   * @name drawPolygonNorth
+   * @description Generates polygon element points attribute for
+   *          a north-pointing triangle.
    *
-   * @param {Number} xpos
-   * @param {Number} ypos
+   * @param {Number} xpos x-coordinate in pixels to begin drawing.
+   * @param {Number} ypos y-coordinate in pixels to begin drawing.
    *
    * @returns {String}
    */
@@ -326,11 +332,12 @@ class AntFarm {
   /**
    * @method
    * @private
-   * @name
-   * @description
+   * @name drawPolygonEast
+   * @description Generates polygon element points attribute for
+   *          am east-pointing triangle.
    *
-   * @param {Number} xpos
-   * @param {Number} ypos
+   * @param {Number} xpos x-coordinate in pixels to begin drawing.
+   * @param {Number} ypos y-coordinate in pixels to begin drawing.
    *
    * @returns {String}
    */
@@ -343,11 +350,12 @@ class AntFarm {
   /**
    * @method
    * @private
-   * @name
-   * @description
+   * @name drawPolygonSouth
+   * @description Generates polygon element points attribute for
+   *          a south-pointing triangle.
    *
-   * @param {Number} xpos
-   * @param {Number} ypos
+   * @param {Number} xpos x-coordinate in pixels to begin drawing.
+   * @param {Number} ypos y-coordinate in pixels to begin drawing.
    *
    * @returns {String}
    */
@@ -359,13 +367,15 @@ class AntFarm {
   /**
    * @method
    * @private
-   * @name
-   * @description
+   * @name turn
+   * @description Given the current tile that the ant occupies,
+   *            and the direction the ant is currently facing,
+   *            turn the ant to the proper direction
    *
-   * @param {Object} tile
-   * @param {Number} antDirection
+   * @param {Object} tile reference to a rect DOM element
+   * @param {Number} antDirection direction the ant is facing
    *
-   * @returns {Number}
+   * @returns {Number} new ant direction
    */
   turn(tile, antDirection) {
     const state = tile.getAttribute("data-color");
@@ -384,11 +394,13 @@ class AntFarm {
   /**
    * @method
    * @private
-   * @name
-   * @description
+   * @name move
+   * @description given the ants current position and direction
+   *            move will update the values of the position to
+   *            reflect its new state.
    *
-   * @param {Array} antPosition
-   * @param {Number} antDirection
+   * @param {Array} antPosition current position of the ant in the grid
+   * @param {Number} antDirection current direction the ant is facing
    *
    * @returns {Number}
    */
@@ -412,13 +424,13 @@ class AntFarm {
    * @name
    * @description
    *
-   * @param {Array} antPos
-   * @param {Object} ant
-   * @param {Number} antDirection
+   * @param {Array} antPosition current position of the ant in the grid
+   * @param {Object} ant reference to the ant polygon DOM element
+   * @param {Number} antDirection current direction the ant is facing
    */
-  drawAnt(antPos, ant, antDirection) {
-    let xpos = antPos[0] * this.squareSize;
-    let ypos = antPos[1] * this.squareSize;
+  drawAnt(antPosition, ant, antDirection) {
+    let xpos = antPosition[0] * this.squareSize;
+    let ypos = antPosition[1] * this.squareSize;
 
     ant.setAttribute(
       "points",
@@ -429,10 +441,10 @@ class AntFarm {
   /**
    * @method
    * @private
-   * @name
+   * @name incrementColorAtTile
    * @description
    *
-   * @param {Object} tile
+   * @param {Object} tile reference to a rect DOM element
    */
   incrementColorAtTile(tile) {
     let colorCode = Number(tile.getAttribute("data-color"));
