@@ -229,6 +229,12 @@ class AntFarm {
     // save a reference to the main loop function that will be executed
     // in the setInterval.  This can be used to start and stop the
     // running of the simulation.
+    /**
+     * @function
+     * @private
+     * @description the main loop for iterating.  Updates antDir and antPos
+     *          accordingly and updates the DOM
+     */
     this.loopFunction = () => {
       t0 = performance.now();
 
@@ -442,7 +448,9 @@ class AntFarm {
    * @method
    * @private
    * @name incrementColorAtTile
-   * @description
+   * @description increments the color of the tile after the ant
+   *        moves off of it in a loop.
+   *        Black -> Red -> Yellow -> Blue -> Black
    *
    * @param {Object} tile reference to a rect DOM element
    */
