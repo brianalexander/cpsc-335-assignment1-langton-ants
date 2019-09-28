@@ -1,11 +1,11 @@
 -----Class number
-    CPSC 335-05 Algorithm Engineering
+    FALL 2019 CPSC 335-05 Algorithm Engineering
 -----Project number and name
     Project #1 – Cella Ant 12
 -----Team name and members
     Team Name: BTA
     Members: Brian Alexander
------Intro (including the algorithm used)
+-----Intro
     AntFarm takes 4 arguments (grid size, square size, speed, stepTag).  Given these first three it will draw a grid on an html page and begin iterating an ant as it steps across the page using the defined behavior. The main computation of the class takes place in the start method, which first creates the DOM elements, renders them, and beings the main iteration process. 
 -----Contents: Files in the .zip submission
     AntFarm.js
